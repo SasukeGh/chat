@@ -1,104 +1,83 @@
-// === Cookie Utilities ===
-function setCookie(name, value, days) {
-  const expires = new Date(Date.now() + days * 864e5).toUTCString();
-  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
+let lastMessageTime = null;
+
+// Load name from cookie
+const senderInput = document.getElementById("sender");
+const cookieMatch = document.cookie.match(/sender=([^;]+)/);
+if (cookieMatch) {
+  senderInput.value = decodeURIComponent(cookieMatch[1]);
 }
 
-function getCookie(name) {
-  return document.cookie.split('; ').reduce((r, v) => {
-    const parts = v.split('=');
-    return parts[0] === name ? decodeURIComponent(parts[1]) : r
-  }, '');
+// Ask for notification permission
+if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+  Notification.requestPermission();
 }
 
-// === Format Timestamp (HH:MM) ===
-function formatTime(timestamp) {
-  const date = new Date(timestamp);
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
-// === Load Messages ===
 async function loadMessages() {
   try {
-    const res = await fetch('/api/getMessages');
+    const res = await fetch("/api/getMessages");
     const data = await res.json();
-    const chatBox = document.getElementById('chat-box');
+    const messages = data.messages;
 
+    const chatBox = document.getElementById("chat-box");
     if (!chatBox) return;
 
-    chatBox.innerHTML = '';
-    data.messages.forEach(msg => {
-      const time = formatTime(msg.timestamp);
-      const div = document.createElement('div');
-      div.textContent = `${msg.sender} (${time}): ${msg.message}`;
+    chatBox.innerHTML = "";
+
+    messages.forEach((msg) => {
+      const time = new Date(msg.timestamp).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      const div = document.createElement("div");
+      div.textContent = `${msg.sender} [${time}]: ${msg.message}`;
       chatBox.appendChild(div);
     });
 
-    // Scroll to bottom
-    chatBox.scrollTop = chatBox.scrollHeight;
+    // Show notification for new message
+    if (messages.length > 0) {
+      const latestMsg = messages[messages.length - 1];
 
-    // Notify if new message
-    if (Notification.permission === "granted" && data.messages.length > 0) {
-      const lastMsg = data.messages[data.messages.length - 1];
-      if (lastMsg.sender !== getCookie("sender")) {
-        showNotification(lastMsg.sender, lastMsg.message);
+      if (lastMessageTime !== latestMsg.timestamp) {
+        if (Notification.permission === "granted") {
+          new Notification(`${latestMsg.sender}: ${latestMsg.message}`);
+        }
+        lastMessageTime = latestMsg.timestamp;
       }
     }
-
   } catch (err) {
     console.error("Error fetching messages:", err);
   }
 }
 
-// === Show Notification ===
-function showNotification(sender, message) {
-  new Notification(`New message from ${sender}`, {
-    body: message,
-    icon: "https://cdn-icons-png.flaticon.com/512/1384/1384031.png" // optional icon
-  });
-}
-
-// === Request Notification Permission ===
-if ("Notification" in window && Notification.permission !== "granted") {
-  Notification.requestPermission();
-}
-
-// === Form Submission ===
 document.getElementById("chat-form").addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const senderInput = document.getElementById("sender");
-  const messageInput = document.getElementById("message");
-
   const sender = senderInput.value.trim();
-  const message = messageInput.value.trim();
+  const message = document.getElementById("message").value.trim();
 
   if (!sender || !message) return;
 
-  setCookie("sender", sender, 365); // Save sender name in cookie
+  // Save sender to cookie (expires in 1 year)
+  document.cookie = `sender=${encodeURIComponent(sender)}; path=/; max-age=${60 * 60 * 24 * 365}`;
 
   try {
-    const res = await fetch('/api/sendMessages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/sendMessage", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sender, message }),
     });
 
     if (res.ok) {
-      messageInput.value = '';
+      document.getElementById("message").value = "";
       loadMessages();
     } else {
-      console.error("Error sending message:", res.statusText);
+      console.error("Failed to send message");
     }
   } catch (err) {
     console.error("Error sending message:", err);
   }
 });
 
-// === On Page Load ===
-window.onload = () => {
-  const savedSender = getCookie("sender");
-  if (savedSender) document.getElementById("sender").value = savedSender;
-  loadMessages();
-  setInterval(loadMessages, 1000); // Refresh every 1 second
-};
+// Start polling messages every 1 second
+loadMessages();
+setInterval(loadMessages, 1000);
