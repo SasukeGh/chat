@@ -1,6 +1,13 @@
 // Request permission for notifications when the page loads
 if (Notification.permission !== "granted") {
-    Notification.requestPermission();
+    // Request permission if not granted already
+    Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+            console.log("Notification permission granted");
+        } else {
+            console.log("Notification permission denied");
+        }
+    });
 }
 
 // Load messages when the page is loaded
@@ -39,7 +46,7 @@ async function loadMessages() {
 function showNotification(message) {
     const notification = new Notification("New Message", {
         body: `${message.sender}: ${message.message}`,
-        icon: "/path/to/icon.png",  // You can set an icon here if you like
+        icon: "/path/to/icon.png",  // Optional: set an icon here
     });
 }
 
