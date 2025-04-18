@@ -1,18 +1,34 @@
-async function loadMessages() {
-    try {
-        const response = await fetch("/api/getMessages");
-        const data = await response.json();
+document.getElementById("chat-form").addEventListener("submit", async (e) => {
+    e.preventDefault();  // Prevent the page from refreshing
 
-        const messagesContainer = document.getElementById("chat-box"); // Change this to 'chat-box'
-        if (messagesContainer) {
-            // Ensure the element exists before setting innerHTML
-            messagesContainer.innerHTML = data.messages.map(msg => 
-                `<p><strong>${msg.sender}:</strong> ${msg.message} <em>${msg.timestamp}</em></p>`
-            ).join("");
-        } else {
-            console.error("Messages container not found");
+    const sender = document.getElementById("sender").value;
+    const message = document.getElementById("message").value;
+
+    if (sender && message) {
+        try {
+            // Send the message to the API
+            const response = await fetch("/api/sendMessage", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ sender, message }),
+            });
+
+            // Check if the response was successful
+            if (response.ok) {
+                console.log("Message sent successfully");
+                // Clear the input fields after sending
+                document.getElementById("sender").value = "";
+                document.getElementById("message").value = "";
+
+                // Reload messages (you can adjust the interval for automatic refreshing)
+                loadMessages();
+            } else {
+                console.error("Failed to send message");
+            }
+        } catch (error) {
+            console.error("Error sending message:", error);
         }
-    } catch (error) {
-        console.error("Error fetching messages:", error);
     }
-}
+});
