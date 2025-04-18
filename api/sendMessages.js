@@ -1,3 +1,4 @@
+const { Client } = require('pg');
 import { Client } from 'pg';
 
 export default async function handler(req, res) {
