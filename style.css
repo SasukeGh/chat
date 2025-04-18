@@ -1,39 +1,104 @@
+/* style.css */
+
 body {
-  font-family: Arial, sans-serif;
-  background: #f4f4f4;
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f0f2f5;
   display: flex;
   justify-content: center;
-  padding: 2rem;
+  align-items: center;
+  height: 100vh;
 }
 
 .chat-container {
-  width: 100%;
-  max-width: 600px;
   background: white;
-  padding: 1rem;
-  border-radius: 10px;
-  box-shadow: 0 0 10px #ccc;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  width: 90%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+h2 {
+  margin: 0;
+  text-align: center;
+  color: #333;
 }
 
 #chat-box {
+  height: 400px;
+  overflow-y: auto;
   border: 1px solid #ddd;
-  height: 300px;
-  overflow-y: scroll;
-  padding: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-form {
+  border-radius: 8px;
+  padding: 10px;
+  background-color: #fafafa;
   display: flex;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 10px;
 }
 
-input[type="text"] {
-  flex: 1;
-  padding: 0.5rem;
+.message {
+  padding: 10px 14px;
+  border-radius: 12px;
+  max-width: 80%;
+  word-wrap: break-word;
+  font-size: 0.95rem;
+  position: relative;
+  background-color: #e1f5fe;
+  color: #333;
+  align-self: flex-start;
+}
+
+.message.self {
+  background-color: #c8e6c9;
+  align-self: flex-end;
+}
+
+.timestamp {
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: 4px;
+  text-align: right;
+}
+
+#chat-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#sender,
+#message {
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  width: 100%;
 }
 
 button {
-  padding: 0.5rem 1rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 12px;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
+button:hover {
+  background-color: #0056b3;
+}
+
+/* Scrollbar (optional style) */
+#chat-box::-webkit-scrollbar {
+  width: 8px;
+}
+#chat-box::-webkit-scrollbar-thumb {
+  background-color: #bbb;
+  border-radius: 4px;
+}
