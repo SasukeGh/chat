@@ -75,7 +75,7 @@ document.getElementById("chat-form").addEventListener("submit", async (e) => {
 
   if (!sender || !message) return;
 
-  setCookie("sender", sender, 7); // Save sender name in cookie
+  setCookie("sender", sender, 365); // Save sender name in cookie
 
   try {
     const res = await fetch('/api/sendMessages', {
