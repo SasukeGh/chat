@@ -1,6 +1,6 @@
-let lastMessageTime = null;
+let lastNotifiedMessageId = null;
 
-// Load name from cookie
+// Load sender name from cookie
 const senderInput = document.getElementById("sender");
 const cookieMatch = document.cookie.match(/sender=([^;]+)/);
 if (cookieMatch) {
@@ -33,15 +33,16 @@ async function loadMessages() {
       chatBox.appendChild(div);
     });
 
-    // Show notification for new message
+    // Show notification for new message (only once per message)
     if (messages.length > 0) {
-      const latestMsg = messages[messages.length - 1];
+      const latest = messages[messages.length - 1];
+      const uniqueMsgId = `${latest.sender}-${latest.timestamp}-${latest.message}`;
 
-      if (lastMessageTime !== latestMsg.timestamp) {
+      if (lastNotifiedMessageId !== uniqueMsgId) {
         if (Notification.permission === "granted") {
-          new Notification(`${latestMsg.sender}: ${latestMsg.message}`);
+          new Notification(`${latest.sender}: ${latest.message}`);
         }
-        lastMessageTime = latestMsg.timestamp;
+        lastNotifiedMessageId = uniqueMsgId;
       }
     }
   } catch (err) {
@@ -78,6 +79,6 @@ document.getElementById("chat-form").addEventListener("submit", async (e) => {
   }
 });
 
-// Start polling messages every 1 second
+// Start polling every second
 loadMessages();
 setInterval(loadMessages, 1000);
