@@ -1,3 +1,8 @@
+// Request permission for notifications when the page loads
+if (Notification.permission !== "granted") {
+    Notification.requestPermission();
+}
+
 // Load messages when the page is loaded
 window.onload = loadMessages;
 
@@ -8,18 +13,34 @@ async function loadMessages() {
 
         const messagesContainer = document.getElementById("chat-box");
         if (messagesContainer) {
+            const messages = data.messages;
             // Format the timestamp to display only hours and minutes (HH:MM)
-            messagesContainer.innerHTML = data.messages.map(msg => {
+            messagesContainer.innerHTML = messages.map(msg => {
                 const timestamp = new Date(msg.timestamp);
                 const formattedTime = timestamp.toISOString().substr(11, 5); // Get the time part (HH:MM)
                 return `<p><strong>${msg.sender}:</strong> ${msg.message} <em>${formattedTime}</em></p>`;
             }).join("");
+
+            // Show notifications for new messages
+            if (Notification.permission === "granted" && messages.length > 0) {
+                // Show notification for the last message
+                const lastMessage = messages[messages.length - 1];
+                showNotification(lastMessage);
+            }
         } else {
             console.error("Messages container not found");
         }
     } catch (error) {
         console.error("Error fetching messages:", error);
     }
+}
+
+// Function to show a browser notification
+function showNotification(message) {
+    const notification = new Notification("New Message", {
+        body: `${message.sender}: ${message.message}`,
+        icon: "/path/to/icon.png",  // You can set an icon here if you like
+    });
 }
 
 // Adding event listener for form submission
