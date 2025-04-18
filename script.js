@@ -23,6 +23,6 @@ document.getElementById('chat-form').addEventListener('submit', async (e) => {
   loadMessages();
 });
 
-setInterval(loadMessages, 3000);
+setInterval(loadMessages, 1000);
 loadMessages();
 
