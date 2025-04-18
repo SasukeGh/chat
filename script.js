@@ -1,20 +1,27 @@
-async function loadMessages() {
-    try {
-        const response = await fetch("/api/getMessages");
-        const data = await response.json();
+// Adding event listener for form submission
+document.getElementById("chat-form").addEventListener("submit", async (event) => {
+    event.preventDefault(); // Prevent page refresh on submit
 
-        const messagesContainer = document.getElementById("chat-box");
-        if (messagesContainer) {
-            // Format the timestamp to display only hours and minutes (HH:MM)
-            messagesContainer.innerHTML = data.messages.map(msg => {
-                const timestamp = new Date(msg.timestamp);
-                const formattedTime = timestamp.toISOString().substr(11, 5); // Get the time part (HH:MM)
-                return `<p><strong>${msg.sender}:</strong> ${msg.message} <em>${formattedTime}</em></p>`;
-            }).join("");
-        } else {
-            console.error("Messages container not found");
-        }
-    } catch (error) {
-        console.error("Error fetching messages:", error);
+    const sender = document.getElementById("sender").value;
+    const message = document.getElementById("message").value;
+
+    // Send the message
+    const response = await fetch("/api/sendMessage", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ sender, message }),
+    });
+
+    if (response.ok) {
+        console.log("Message sent successfully");
+        loadMessages(); // Reload messages after sending one
+    } else {
+        console.error("Error sending message:", response.statusText);
     }
-}
+
+    // Clear the input fields
+    document.getElementById("sender").value = '';
+    document.getElementById("message").value = '';
+});
