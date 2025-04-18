@@ -1,79 +1,104 @@
-// Request permission for notifications when the page loads
-if (Notification.permission !== "granted") {
-    // Request permission if not granted already
-    Notification.requestPermission().then(permission => {
-        if (permission === "granted") {
-            console.log("Notification permission granted");
-        } else {
-            console.log("Notification permission denied");
-        }
-    });
+// === Cookie Utilities ===
+function setCookie(name, value, days) {
+  const expires = new Date(Date.now() + days * 864e5).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
 }
 
-// Load messages when the page is loaded
-window.onload = loadMessages;
+function getCookie(name) {
+  return document.cookie.split('; ').reduce((r, v) => {
+    const parts = v.split('=');
+    return parts[0] === name ? decodeURIComponent(parts[1]) : r
+  }, '');
+}
 
+// === Format Timestamp (HH:MM) ===
+function formatTime(timestamp) {
+  const date = new Date(timestamp);
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// === Load Messages ===
 async function loadMessages() {
-    try {
-        const response = await fetch("/api/getMessages");
-        const data = await response.json();
+  try {
+    const res = await fetch('/api/getMessages');
+    const data = await res.json();
+    const chatBox = document.getElementById('chat-box');
 
-        const messagesContainer = document.getElementById("chat-box");
-        if (messagesContainer) {
-            const messages = data.messages;
-            // Format the timestamp to display only hours and minutes (HH:MM)
-            messagesContainer.innerHTML = messages.map(msg => {
-                const timestamp = new Date(msg.timestamp);
-                const formattedTime = timestamp.toISOString().substr(11, 5); // Get the time part (HH:MM)
-                return `<p><strong>${msg.sender}:</strong> ${msg.message} <em>${formattedTime}</em></p>`;
-            }).join("");
+    if (!chatBox) return;
 
-            // Show notifications for new messages
-            if (Notification.permission === "granted" && messages.length > 0) {
-                // Show notification for the last message
-                const lastMessage = messages[messages.length - 1];
-                showNotification(lastMessage);
-            }
-        } else {
-            console.error("Messages container not found");
-        }
-    } catch (error) {
-        console.error("Error fetching messages:", error);
+    chatBox.innerHTML = '';
+    data.messages.forEach(msg => {
+      const time = formatTime(msg.timestamp);
+      const div = document.createElement('div');
+      div.textContent = `${msg.sender} (${time}): ${msg.message}`;
+      chatBox.appendChild(div);
+    });
+
+    // Scroll to bottom
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    // Notify if new message
+    if (Notification.permission === "granted" && data.messages.length > 0) {
+      const lastMsg = data.messages[data.messages.length - 1];
+      if (lastMsg.sender !== getCookie("sender")) {
+        showNotification(lastMsg.sender, lastMsg.message);
+      }
     }
+
+  } catch (err) {
+    console.error("Error fetching messages:", err);
+  }
 }
 
-// Function to show a browser notification
-function showNotification(message) {
-    const notification = new Notification("New Message", {
-        body: `${message.sender}: ${message.message}`,
-        icon: "/path/to/icon.png",  // Optional: set an icon here
-    });
+// === Show Notification ===
+function showNotification(sender, message) {
+  new Notification(`New message from ${sender}`, {
+    body: message,
+    icon: "https://cdn-icons-png.flaticon.com/512/1384/1384031.png" // optional icon
+  });
 }
 
-// Adding event listener for form submission
-document.getElementById("chat-form").addEventListener("submit", async (event) => {
-    event.preventDefault(); // Prevent page refresh on submit
+// === Request Notification Permission ===
+if ("Notification" in window && Notification.permission !== "granted") {
+  Notification.requestPermission();
+}
 
-    const sender = document.getElementById("sender").value;
-    const message = document.getElementById("message").value;
+// === Form Submission ===
+document.getElementById("chat-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-    // Send the message
-    const response = await fetch("/api/sendMessage", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ sender, message }),
+  const senderInput = document.getElementById("sender");
+  const messageInput = document.getElementById("message");
+
+  const sender = senderInput.value.trim();
+  const message = messageInput.value.trim();
+
+  if (!sender || !message) return;
+
+  setCookie("sender", sender, 7); // Save sender name in cookie
+
+  try {
+    const res = await fetch('/api/sendMessages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sender, message }),
     });
 
-    if (response.ok) {
-        console.log("Message sent successfully");
-        loadMessages(); // Reload messages after sending one
+    if (res.ok) {
+      messageInput.value = '';
+      loadMessages();
     } else {
-        console.error("Error sending message:", response.statusText);
+      console.error("Error sending message:", res.statusText);
     }
-
-    // Clear the input fields
-    document.getElementById("sender").value = '';
-    document.getElementById("message").value = '';
+  } catch (err) {
+    console.error("Error sending message:", err);
+  }
 });
+
+// === On Page Load ===
+window.onload = () => {
+  const savedSender = getCookie("sender");
+  if (savedSender) document.getElementById("sender").value = savedSender;
+  loadMessages();
+  setInterval(loadMessages, 1000); // Refresh every 1 second
+};
