@@ -79,6 +79,40 @@ document.getElementById("chat-form").addEventListener("submit", async (e) => {
   }
 });
 
+//image stuff
+document.getElementById('image-upload').addEventListener('change', async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await fetch('https://telegra.ph/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await res.json();
+    if (data[0]?.src) {
+      const imageUrl = `https://telegra.ph${data[0].src}`;
+      console.log("Image uploaded:", imageUrl);
+
+      // Auto-fill the message box with the link
+      document.getElementById('message').value = imageUrl;
+
+      // Optionally auto-send it
+      document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+    }
+  } catch (err) {
+    console.error("Image upload failed", err);
+    alert("Image upload failed.");
+  }
+
+  // Clear the file input so same file can be uploaded again
+  event.target.value = '';
+});
+
 // Start polling every second
 loadMessages();
 setInterval(loadMessages, 1000);
