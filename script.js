@@ -80,37 +80,40 @@ document.getElementById("chat-form").addEventListener("submit", async (e) => {
 });
 
 //image stuff
-document.getElementById('image-upload').addEventListener('change', async (event) => {
+document.getElementById("image-input").addEventListener("change", async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
-  const formData = new FormData();
-  formData.append('file', file);
+  const reader = new FileReader();
 
-  try {
-    const res = await fetch('https://telegra.ph/upload', {
-      method: 'POST',
-      body: formData,
+  reader.onloadend = async () => {
+    const base64 = reader.result.split(",")[1];
+
+    const response = await fetch("/api/uploadImage", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: file.name,
+        content: base64,
+        type: file.type,
+      }),
     });
 
-    const data = await res.json();
-    if (data[0]?.src) {
-      const imageUrl = `https://telegra.ph${data[0].src}`;
-      console.log("Image uploaded:", imageUrl);
+    const data = await response.json();
 
-      // Auto-fill the message box with the link
-      document.getElementById('message').value = imageUrl;
-
-      // Optionally auto-send it
-      document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+    if (data.url) {
+      // Send the image link as a message
+      document.getElementById("message").value = data.url;
+      document.getElementById("chat-form").dispatchEvent(new Event("submit"));
+    } else {
+      alert("Image upload failed!");
+      console.error(data);
     }
-  } catch (err) {
-    console.error("Image upload failed", err);
-    alert("Image upload failed.");
-  }
+  };
 
-  // Clear the file input so same file can be uploaded again
-  event.target.value = '';
+  reader.readAsDataURL(file);
 });
 
 // Start polling every second
