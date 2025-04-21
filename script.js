@@ -119,3 +119,5 @@ document.getElementById("image-input").addEventListener("change", async (event) 
 // Start polling every second
 loadMessages();
 setInterval(loadMessages, 1000);
+chatBox.scrollTop = chatBox.scrollHeight;
+
