@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   }
 
   const { name, content } = req.body;
-  const apiKey = "YOUR_IMGBB_API_KEY";
+  const apiKey = "f477ec52a8c28cb90e3039386703cc08";
 
   try {
     const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
