@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Media pAge</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 2rem; }
+    img { max-width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+  <h2>YOUR PICTURE</h2>
+  <div id="image-container">Loading the picture(do not refresh)...</div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const viewkey = params.get("viewkey");
+
+    async function loadImage() {
+      const res = await fetch(`/api/getImage?viewkey=${viewkey}`);
+      const data = await res.json();
+
+      if (data.url) {
+        document.getElementById("image-container").innerHTML = `<img src="${data.url}" alt="Shared Image">`;
+      } else {
+        document.getElementById("image-container").innerText = "Image not found.";
+      }
+    }
+
+    loadImage();
+  </script>
+</body>
+</html>
