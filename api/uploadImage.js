@@ -1,10 +1,14 @@
-// /api/uploadImage.js
+import fs from 'fs';
+import path from 'path';
+
+const filePath = path.resolve('./data/images.json');
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { name, content, type } = req.body;
+  const { name, content } = req.body;
   const apiKey = "YOUR_IMGBB_API_KEY";
 
   try {
@@ -20,17 +24,22 @@ export default async function handler(req, res) {
     const result = await response.json();
 
     if (result.success) {
-      // generate a viewkey and save it with the image URL
       const viewkey = Math.random().toString(16).substring(2, 14);
-      // Save this viewkey + URL in a file or DB (we can use Neon for this)
+      const newEntry = { viewkey, url: result.data.url };
 
-      // For now, return the image URL and viewkey
+      let current = [];
+      if (fs.existsSync(filePath)) {
+        const data = fs.readFileSync(filePath);
+        current = JSON.parse(data);
+      }
+      current.push(newEntry);
+      fs.writeFileSync(filePath, JSON.stringify(current, null, 2));
+
       res.status(200).json({ url: result.data.url, viewkey });
     } else {
       res.status(500).json({ error: "Upload failed", details: result });
     }
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: "Failed to upload", details: err.message });
   }
 }
