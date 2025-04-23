@@ -1,45 +1,33 @@
-import fs from 'fs';
-import path from 'path';
-
-const filePath = path.resolve('./data/images.json');
-
+// uploadImage.js
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+  if (req.method === "POST") {
+    const { content, name, type } = req.body;
 
-  const { name, content } = req.body;
-  const apiKey = "f477ec52a8c28cb90e3039386703cc08";
+    const apiKey = "your_imgbb_api_key"; // Replace with your IMGBB API key
 
-  try {
-    const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        image: content,
-        name,
-      }),
-    });
+    // Create a form data object to send the image to IMGBB
+    const formData = new FormData();
+    formData.append("image", content); // The base64 string of the image
 
-    const result = await response.json();
+    try {
+      const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+        method: "POST",
+        body: formData,
+      });
 
-    if (result.success) {
-      const viewkey = Math.random().toString(16).substring(2, 14);
-      const newEntry = { viewkey, url: result.data.url };
+      const data = await response.json();
 
-      let current = [];
-      if (fs.existsSync(filePath)) {
-        const data = fs.readFileSync(filePath);
-        current = JSON.parse(data);
+      if (data.success) {
+        const imageUrl = data.data.url; // The image URL returned by IMGBB
+        return res.json({ url: imageUrl });
+      } else {
+        return res.status(400).json({ error: "Image upload failed", details: data });
       }
-      current.push(newEntry);
-      fs.writeFileSync(filePath, JSON.stringify(current, null, 2));
-
-      res.status(200).json({ url: result.data.url, viewkey });
-    } else {
-      res.status(500).json({ error: "Upload failed", details: result });
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      return res.status(500).json({ error: "Internal Server Error" });
     }
-  } catch (err) {
-    res.status(500).json({ error: "Failed to upload", details: err.message });
+  } else {
+    return res.status(405).json({ error: "Method Not Allowed" });
   }
 }
